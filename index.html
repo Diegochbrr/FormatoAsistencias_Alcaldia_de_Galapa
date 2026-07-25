@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formato de Asistencias Galapa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- TOOLBAR (NO-PRINT) -->
+    <div class="toolbar no-print">
+        <div class="toolbar-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            FORMATO DE ASISTENCIAS GALAPA (17 PERSONAS)
+        </div>
+        <div class="toolbar-group">
+            <button class="btn btn-primary" onclick="window.print()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir / PDF Imprimible
+            </button>
+            <button class="btn btn-primary" style="background-color: #0F5B27; color: white; border-color: #0F5B27;" onclick="generarPDFEditable()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Guardar PDF Editable
+            </button>
+            <button class="btn" onclick="agregarFila()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar Fila
+            </button>
+            <button class="btn btn-danger" onclick="limpiarTabla()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Limpiar Todo
+            </button>
+        </div>
+    </div>
+
+    <!-- DOCUMENT SHEET CONTAINER -->
+    <div class="page-wrapper">
+        <div class="page" id="documentPage">
+            
+            <!-- CONTENT AREA -->
+            <div class="page-content">
+
+                <!-- OFFICIAL HEADER IMAGE BANNER -->
+                <div class="header-banner-container">
+                    <img src="encabezado_oficial.png" class="header-banner-img" alt="Encabezado Oficial Galapa">
+                </div>
+
+                <!-- MAIN DOCUMENT TITLE -->
+                <div class="main-title">
+                    LISTADO DE ASISTENCIA Y ACTIVIDADES A DESARROLLAR
+                </div>
+
+                <!-- METADATA FORM SECTION -->
+                <div class="form-section">
+                    
+                    <!-- ROW 1: LUGAR DE CONCENTRACION & FECHA -->
+                    <div class="form-row">
+                        <div class="form-cell" style="flex: 1;">
+                            <span class="form-label">LUGAR DE CONCENTRACIÓN:</span>
+                            <input type="text" class="form-input" id="lugarInput">
+                        </div>
+                        <div class="date-container">
+                            <span class="form-label">FECHA:</span>
+                            <div class="date-box-wrap">
+                                <input type="text" maxlength="2" id="fechaDia">
+                                <input type="text" maxlength="2" id="fechaMes">
+                                <input type="text" maxlength="4" id="fechaAno">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 2: ACTIVIDADES A DESARROLLAR -->
+                    <div class="activities-row">
+                        <span class="form-label">ACTIVIDADES A DESARROLLAR:</span>
+                        <textarea class="activities-textarea" id="actividadesInput" rows="2"></textarea>
+                    </div>
+
+                </div>
+
+                <!-- MAIN TABLE (FORMATO GALAPA: 6 COLUMNS, 17 ROWS) -->
+                <div class="table-container">
+                    <table class="attendance-table" id="tablaAsistencia">
+                        <thead>
+                            <tr>
+                                <th class="col-no">No</th>
+                                <th class="col-id">NÚMERO DE IDENTIFICACIÓN</th>
+                                <th class="col-name">NOMBRES Y APELLIDOS</th>
+                                <th class="col-tel">TELÉFONO</th>
+                                <th class="col-firma">FIRMA O HUELLA</th>
+                                <th class="col-asist">ASIST.</th>
+                                <th class="col-action no-print"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBody">
+                            <!-- Dynamic 17 Empty Rows Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- PAGE FOOTER SECTION -->
+            <div class="page-footer-container">
+                <div class="page-num">PÁG. 1</div>
+                
+                <div class="footer-banner">
+                    <div class="footer-col">
+                        <span>Dirección: Calle 13 No. 17-117 Galapa, Atlántico</span>
+                        <span>Correo institucional: contactenos@galapa-atlantico.gov.co</span>
+                    </div>
+                    
+                    <div class="footer-col" style="text-align: center;">
+                        <span>Línea de servicio a la ciudadanía: (+57) 3160272493</span>
+                        <span>www.galapa-atlantico.gov.co &nbsp;&nbsp; NIT: 890.102.472-0</span>
+                    </div>
+
+                    <div class="footer-col-right">
+                        <div class="social-icons">
+                            <svg class="social-icon" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                            <svg class="social-icon" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            <svg class="social-icon" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        </div>
+                        <span>AlcaldiaGalapa</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PDF-LIB & LOGIC SCRIPT -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
