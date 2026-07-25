@@ -117,6 +117,39 @@ body {
     justify-content: space-between;
     overflow: hidden;
     padding: 0;
+    margin-bottom: 30px;
+}
+
+.page:last-child {
+    margin-bottom: 0;
+}
+
+.page-header-actions {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    z-index: 10;
+}
+
+.btn-del-page {
+    background-color: #ef4444;
+    color: white;
+    border: 1px solid #dc2626;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+}
+
+.btn-del-page:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
 }
 
 .page-content {
@@ -482,13 +515,11 @@ table.attendance-table tbody tr {
 
     html, body {
         width: 100% !important;
-        height: 100% !important;
         background: #ffffff !important;
         padding: 0 !important;
         margin: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        overflow: hidden !important;
     }
 
     .toolbar, .col-action, .no-print {
@@ -505,13 +536,14 @@ table.attendance-table tbody tr {
     }
 
     .page {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 100vh !important;
+        width: 279.4mm !important;
+        height: 215.9mm !important;
         box-shadow: none !important;
         margin: 0 auto !important;
-        page-break-after: avoid !important;
+        page-break-after: always !important;
+        break-after: page !important;
         page-break-inside: avoid !important;
+        break-inside: avoid !important;
         min-width: 0 !important;
     }
 
