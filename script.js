@@ -135,6 +135,25 @@ function agregarPagina() {
     actualizarNumeracionGeneral();
 }
 
+// Check if a specific page sheet contains any filled table data or inputs
+function paginaTieneDatos(page) {
+    if (!page) return false;
+
+    // Check table text inputs (cédula, nombre, teléfono, firma)
+    const tableInputs = page.querySelectorAll(".tabla-body input[type='text']");
+    for (let input of tableInputs) {
+        if (input.value.trim() !== "") return true;
+    }
+
+    // Check table attendance checkboxes
+    const checkBoxes = page.querySelectorAll(".tabla-body input[type='checkbox']");
+    for (let check of checkBoxes) {
+        if (check.checked) return true;
+    }
+
+    return false;
+}
+
 // Delete a page
 function eliminarPagina(btn) {
     const container = document.getElementById("pagesContainer");
@@ -148,6 +167,10 @@ function eliminarPagina(btn) {
 
     const page = btn.closest(".page");
     if (page) {
+        if (paginaTieneDatos(page)) {
+            const confirmar = confirm("Esta página contiene datos de asistencia ingresados. ¿Está seguro de que desea eliminarla?");
+            if (!confirmar) return;
+        }
         page.remove();
         actualizarNumeracionGeneral();
     }

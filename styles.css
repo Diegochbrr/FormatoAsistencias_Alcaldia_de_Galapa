@@ -108,7 +108,8 @@ body {
 
 .page {
     width: 279.4mm;
-    height: 215.9mm; /* Exact Landscape dimensions */
+    height: 215.9mm;
+    /* Exact Landscape dimensions */
     background-color: #ffffff;
     position: relative;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
@@ -143,7 +144,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
 }
 
@@ -253,6 +254,7 @@ body {
     display: flex;
     border: 1px solid #000;
 }
+
 .date-box-wrap input {
     width: 36px;
     height: 22px;
@@ -264,6 +266,7 @@ body {
     font-weight: 600;
     background: transparent;
 }
+
 .date-box-wrap input:last-child {
     border-right: none;
 }
@@ -309,7 +312,7 @@ table.attendance-table {
     background-color: #ffffff;
 }
 
-table.attendance-table th, 
+table.attendance-table th,
 table.attendance-table td {
     border: 1px solid #000000;
     padding: 2px 5px;
@@ -332,13 +335,44 @@ table.attendance-table tbody tr {
 }
 
 /* Column Widths */
-.col-no { width: 4%; text-align: center; font-weight: 700; }
-.col-id { width: 18%; text-align: center; font-weight: 700; }
-.col-name { width: 31%; font-weight: 700; }
-.col-tel { width: 14%; text-align: center; font-weight: 700; }
-.col-firma { width: 21%; text-align: center; }
-.col-asist { width: 7%; text-align: center; font-weight: 700; }
-.col-action { width: 5%; text-align: center; }
+.col-no {
+    width: 4%;
+    text-align: center;
+    font-weight: 700;
+}
+
+.col-id {
+    width: 18%;
+    text-align: center;
+    font-weight: 700;
+}
+
+.col-name {
+    width: 31%;
+    font-weight: 700;
+}
+
+.col-tel {
+    width: 14%;
+    text-align: center;
+    font-weight: 700;
+}
+
+.col-firma {
+    width: 21%;
+    text-align: center;
+}
+
+.col-asist {
+    width: 7%;
+    text-align: center;
+    font-weight: 700;
+}
+
+.col-action {
+    width: 5%;
+    text-align: center;
+}
 
 .cell-input {
     width: 100%;
@@ -380,6 +414,7 @@ table.attendance-table tbody tr {
     width: 28px;
     text-align: center;
 }
+
 .btn-del-row {
     background: none;
     border: none;
@@ -390,6 +425,7 @@ table.attendance-table tbody tr {
     opacity: 0.6;
     transition: opacity 0.2s;
 }
+
 .btn-del-row:hover {
     opacity: 1.0;
 }
@@ -487,19 +523,22 @@ table.attendance-table tbody tr {
         justify-content: center;
         padding: 10px 12px;
         font-size: 12px;
-        min-height: 42px; /* Touch friendly tap target */
+        min-height: 42px;
+        /* Touch friendly tap target */
     }
 
     .page-wrapper {
         width: 100%;
         margin-top: 10px;
         padding: 0 6px;
-        overflow-x: auto; /* Touch scroll for mobile viewport */
+        overflow-x: auto;
+        /* Touch scroll for mobile viewport */
         -webkit-overflow-scrolling: touch;
     }
 
     .page {
-        min-width: 850px; /* Maintains paper layout structure on mobile screen */
+        min-width: 850px;
+        /* Maintains paper layout structure on mobile screen */
         margin: 0 auto;
     }
 }
@@ -513,7 +552,8 @@ table.attendance-table tbody tr {
         margin: 0;
     }
 
-    html, body {
+    html,
+    body {
         width: 100% !important;
         background: #ffffff !important;
         padding: 0 !important;
@@ -522,7 +562,9 @@ table.attendance-table tbody tr {
         print-color-adjust: exact !important;
     }
 
-    .toolbar, .col-action, .no-print {
+    .toolbar,
+    .col-action,
+    .no-print {
         display: none !important;
     }
 
@@ -555,12 +597,29 @@ table.attendance-table tbody tr {
     }
 
     /* Print Column Widths (Without .col-action) */
-    .col-no { width: 4% !important; }
-    .col-id { width: 18% !important; }
-    .col-name { width: 33% !important; }
-    .col-tel { width: 15% !important; }
-    .col-firma { width: 23% !important; }
-    .col-asist { width: 7% !important; }
+    .col-no {
+        width: 4% !important;
+    }
+
+    .col-id {
+        width: 18% !important;
+    }
+
+    .col-name {
+        width: 33% !important;
+    }
+
+    .col-tel {
+        width: 15% !important;
+    }
+
+    .col-firma {
+        width: 23% !important;
+    }
+
+    .col-asist {
+        width: 7% !important;
+    }
 
     table.attendance-table {
         width: 100% !important;
@@ -572,7 +631,10 @@ table.attendance-table tbody tr {
         height: calc((100% - 25px) / 17) !important;
     }
 
-    .cell-input, .activities-textarea, .form-input, .date-box-wrap input {
+    .cell-input,
+    .activities-textarea,
+    .form-input,
+    .date-box-wrap input {
         border: none !important;
         outline: none !important;
         background: transparent !important;
@@ -591,6 +653,7 @@ table.attendance-table tbody tr {
         background-color: #000;
         position: relative;
     }
+
     .check-box-input:checked::after {
         content: '✓';
         color: #fff;
