@@ -140,6 +140,23 @@ async function construirPDF(flatten = false) {
         } catch (e) { }
     });
 
+    // Remove background colors and appearance highlights from all widget dictionaries
+    // to prevent blue boxes or shading in PDF viewers and flattened outputs
+    const fields = form.getFields();
+    fields.forEach(field => {
+        try {
+            const widgets = field.acroField.getWidgets();
+            widgets.forEach(widget => {
+                widget.dict.delete(PDFLib.PDFName.of('BG'));
+                const mk = widget.dict.lookup(PDFLib.PDFName.of('MK'));
+                if (mk && typeof mk.delete === 'function') {
+                    mk.delete(PDFLib.PDFName.of('BG'));
+                    mk.delete(PDFLib.PDFName.of('BC'));
+                }
+            });
+        } catch (e) { }
+    });
+
     // Flatten form fields if non-editable PDF requested
     if (flatten) {
         form.flatten();

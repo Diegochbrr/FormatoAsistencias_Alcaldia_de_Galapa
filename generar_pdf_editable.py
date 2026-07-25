@@ -4,8 +4,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 
 def generar_pdf_editable():
-    output_path = "PageFormat/Formato_Galapa_Editable.pdf"
-    header_img_path = "PageFormat/encabezado_oficial.png"
+    output_path = "Formato_Galapa_Editable.pdf"
+    header_img_path = "encabezado_oficial.png"
     
     # Letter Landscape dimensions in points (792 x 612 pts = 11 x 8.5 in)
     width, height = landscape(letter)
@@ -105,10 +105,6 @@ def generar_pdf_editable():
         
         # Interactive Checkbox for Asist
         c.acroForm.checkbox(name=f"asist_{i}", x=(x_asist + x_end)/2 - 6, y=y_curr + 3, size=11, borderWidth=1, buttonStyle='check')
-        
-    # 5. Footer Page Indicator
-    c.setFont("Helvetica-Bold", 8)
-    c.drawRightString(width - 30, 42, "PÁG. 1")
     
     # 6. Custom Footer Green Banner
     c.setFillColor(colors.HexColor("#88C425"))
