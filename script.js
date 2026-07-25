@@ -66,6 +66,11 @@ function actualizarNumeracion() {
 
 // Clear all inputs and reset table to 17 empty rows
 function limpiarTabla() {
+    if (hayDatosIngresados()) {
+        const confirmar = confirm("¿Está seguro de que desea borrar todos los datos ingresados en el formulario?");
+        if (!confirmar) return;
+    }
+
     const lugar = document.getElementById("lugarInput");
     const dia = document.getElementById("fechaDia");
     const mes = document.getElementById("fechaMes");
@@ -81,15 +86,138 @@ function limpiarTabla() {
     inicializarTablaVacia(17);
 }
 
-// Download Standalone Fillable/Editable PDF
-function generarPDFEditable() {
-    const link = document.createElement('a');
-    link.href = 'Formato_Galapa_Editable.pdf';
-    link.download = 'Formato_Galapa_Editable.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+// Core helper function to populate PDF template using pdf-lib
+async function construirPDF(flatten = false) {
+    const response = await fetch('Formato_Galapa_Editable.pdf');
+    if (!response.ok) {
+        throw new Error(`No se pudo cargar la plantilla PDF. Estado: ${response.status}`);
+    }
+    const existingPdfBytes = await response.arrayBuffer();
+
+    // Load PDF with pdf-lib
+    const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+    const form = pdfDoc.getForm();
+
+    // Populate header / metadata fields
+    const lugarVal = document.getElementById("lugarInput")?.value || "";
+    const diaVal = document.getElementById("fechaDia")?.value || "";
+    const mesVal = document.getElementById("fechaMes")?.value || "";
+    const anoVal = document.getElementById("fechaAno")?.value || "";
+    const actividadesVal = document.getElementById("actividadesInput")?.value || "";
+
+    try { form.getTextField("lugar").setText(lugarVal); } catch (e) { }
+    try { form.getTextField("dia").setText(diaVal); } catch (e) { }
+    try { form.getTextField("mes").setText(mesVal); } catch (e) { }
+    try { form.getTextField("ano").setText(anoVal); } catch (e) { }
+    try { form.getTextField("actividades").setText(actividadesVal); } catch (e) { }
+
+    // Populate table rows (1 to 17)
+    const rows = document.querySelectorAll("#tablaBody tr");
+    rows.forEach((row, index) => {
+        const i = index + 1;
+        if (i > 17) return;
+
+        const inputs = row.querySelectorAll("input[type='text']");
+        const check = row.querySelector("input[type='checkbox']");
+
+        const idVal = inputs[0]?.value || "";
+        const nombreVal = inputs[1]?.value || "";
+        const telVal = inputs[2]?.value || "";
+        const firmaVal = inputs[3]?.value || "";
+
+        try { form.getTextField(`id_${i}`).setText(idVal); } catch (e) { }
+        try { form.getTextField(`nombre_${i}`).setText(nombreVal); } catch (e) { }
+        try { form.getTextField(`tel_${i}`).setText(telVal); } catch (e) { }
+        try { form.getTextField(`firma_${i}`).setText(firmaVal); } catch (e) { }
+
+        try {
+            const checkBoxField = form.getCheckBox(`asist_${i}`);
+            if (check && check.checked) {
+                checkBoxField.check();
+            } else {
+                checkBoxField.uncheck();
+            }
+        } catch (e) { }
+    });
+
+    // Flatten form fields if non-editable PDF requested
+    if (flatten) {
+        form.flatten();
+    }
+
+    return await pdfDoc.save();
 }
+
+// Download Standalone Standard / Flattened PDF (Read-Only)
+async function generarPDFNormal() {
+    try {
+        const pdfBytes = await construirPDF(true);
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Formato_Galapa_Asistencia_Normal.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    } catch (err) {
+        console.error("Error al generar el PDF normal:", err);
+        alert("Ocurrió un error al generar el PDF normal: " + err.message);
+    }
+}
+
+// Download Fillable / Editable PDF (AcroForm)
+async function generarPDFEditable() {
+    try {
+        const pdfBytes = await construirPDF(false);
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Formato_Galapa_Asistencia_Editable.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    } catch (err) {
+        console.error("Error al generar el PDF editable:", err);
+        alert("Ocurrió un error al generar el PDF editable: " + err.message);
+    }
+}
+
+// Check if any form fields or table inputs have data filled
+function hayDatosIngresados() {
+    const lugar = document.getElementById("lugarInput")?.value.trim() || "";
+    const dia = document.getElementById("fechaDia")?.value.trim() || "";
+    const mes = document.getElementById("fechaMes")?.value.trim() || "";
+    const ano = document.getElementById("fechaAno")?.value.trim() || "";
+    const actividades = document.getElementById("actividadesInput")?.value.trim() || "";
+
+    if (lugar !== "" || dia !== "" || mes !== "" || ano !== "" || actividades !== "") {
+        return true;
+    }
+
+    // Check inputs inside the table
+    const inputs = document.querySelectorAll("#tablaBody input[type='text']");
+    for (let input of inputs) {
+        if (input.value.trim() !== "") return true;
+    }
+
+    // Check attendance checkboxes
+    const checks = document.querySelectorAll("#tablaBody input[type='checkbox']");
+    for (let check of checks) {
+        if (check.checked) return true;
+    }
+
+    return false;
+}
+
+// Warn user before closing or refreshing the page if form contains data
+window.addEventListener("beforeunload", (event) => {
+    if (hayDatosIngresados()) {
+        event.preventDefault();
+        event.returnValue = ""; // Standard requirement for modern browsers to trigger prompt
+    }
+});
 
 // Initialize on DOM load
 window.addEventListener("DOMContentLoaded", () => {
