@@ -299,12 +299,13 @@ table.attendance-table tbody tr {
 }
 
 /* Column Widths */
-.col-no { width: 36px; text-align: center; font-weight: 700; }
-.col-id { width: 170px; text-align: center; font-weight: 700; }
-.col-name { width: 310px; font-weight: 700; }
-.col-tel { width: 145px; text-align: center; font-weight: 700; }
-.col-firma { min-width: 220px; text-align: center; }
-.col-asist { width: 55px; text-align: center; font-weight: 700; }
+.col-no { width: 4%; text-align: center; font-weight: 700; }
+.col-id { width: 18%; text-align: center; font-weight: 700; }
+.col-name { width: 31%; font-weight: 700; }
+.col-tel { width: 14%; text-align: center; font-weight: 700; }
+.col-firma { width: 21%; text-align: center; }
+.col-asist { width: 7%; text-align: center; font-weight: 700; }
+.col-action { width: 5%; text-align: center; }
 
 .cell-input {
     width: 100%;
@@ -475,44 +476,64 @@ table.attendance-table tbody tr {
    ========================================== */
 @media print {
     @page {
-        size: letter landscape;
+        size: landscape;
         margin: 0;
     }
 
-    body {
+    html, body {
+        width: 100% !important;
+        height: 100% !important;
         background: #ffffff !important;
         padding: 0 !important;
         margin: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        overflow: hidden !important;
     }
 
-    .toolbar, .col-action {
+    .toolbar, .col-action, .no-print {
         display: none !important;
     }
 
     .page-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
         margin: 0 !important;
+        padding: 0 !important;
         perspective: none !important;
         overflow: visible !important;
     }
 
     .page {
-        width: 279.4mm !important;
-        height: 215.9mm !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
         box-shadow: none !important;
         margin: 0 auto !important;
-        page-break-after: always;
-        min-width: unset !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        min-width: 0 !important;
     }
 
     .page-content {
         padding: 6mm 10mm 2mm 10mm !important;
-        height: calc(100% - 46px) !important;
+        height: calc(100vh - 46px) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
+    /* Print Column Widths (Without .col-action) */
+    .col-no { width: 4% !important; }
+    .col-id { width: 18% !important; }
+    .col-name { width: 33% !important; }
+    .col-tel { width: 15% !important; }
+    .col-firma { width: 23% !important; }
+    .col-asist { width: 7% !important; }
+
     table.attendance-table {
+        width: 100% !important;
         height: 100% !important;
+        table-layout: fixed !important;
     }
 
     table.attendance-table tbody tr {
