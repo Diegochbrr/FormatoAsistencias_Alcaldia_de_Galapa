@@ -224,16 +224,89 @@ async function construirPDF(flatten = false) {
     }
     const templatePdfBytes = await response.arrayBuffer();
 
-    // Create the final output PDF document
-    const outputPdf = await PDFLib.PDFDocument.create();
-
     const pages = document.querySelectorAll("#pagesContainer .page");
+
+    // Single-page optimization for Editable mode to preserve AcroForm interactive fields
+    if (!flatten && pages.length === 1) {
+        const pageEl = pages[0];
+        const pdfDoc = await PDFLib.PDFDocument.load(templatePdfBytes);
+        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const form = pdfDoc.getForm();
+
+        // Extract header values from HTML element
+        const lugarVal = pageEl.querySelector(".lugar-input")?.value || "";
+        const diaVal = pageEl.querySelector(".fecha-dia")?.value || "";
+        const mesVal = pageEl.querySelector(".fecha-mes")?.value || "";
+        const anoVal = pageEl.querySelector(".fecha-ano")?.value || "";
+        const actividadesVal = pageEl.querySelector(".actividades-input")?.value || "";
+
+        try { form.getTextField("lugar").setText(lugarVal); } catch (e) { }
+        try { form.getTextField("dia").setText(diaVal); } catch (e) { }
+        try { form.getTextField("mes").setText(mesVal); } catch (e) { }
+        try { form.getTextField("ano").setText(anoVal); } catch (e) { }
+        try { form.getTextField("actividades").setText(actividadesVal); } catch (e) { }
+
+        // Extract 17 table rows
+        const rows = pageEl.querySelectorAll(".tabla-body tr");
+        rows.forEach((row, rIndex) => {
+            const i = rIndex + 1;
+            if (i > 17) return;
+
+            const inputs = row.querySelectorAll("input[type='text']");
+            const check = row.querySelector("input[type='checkbox']");
+
+            const idVal = inputs[0]?.value || "";
+            const nombreVal = inputs[1]?.value || "";
+            const telVal = inputs[2]?.value || "";
+            const firmaVal = inputs[3]?.value || "";
+
+            try { form.getTextField(`id_${i}`).setText(idVal); } catch (e) { }
+            try { form.getTextField(`nombre_${i}`).setText(nombreVal); } catch (e) { }
+            try { form.getTextField(`tel_${i}`).setText(telVal); } catch (e) { }
+            try { form.getTextField(`firma_${i}`).setText(firmaVal); } catch (e) { }
+
+            try {
+                const checkBoxField = form.getCheckBox(`asist_${i}`);
+                if (check && check.checked) {
+                    checkBoxField.check();
+                } else {
+                    checkBoxField.uncheck();
+                }
+            } catch (e) { }
+        });
+
+        // Set explicit white background [1, 1, 1] on widgets to override default blue field highlight
+        const fields = form.getFields();
+        fields.forEach(field => {
+            try {
+                field.acroField.getWidgets().forEach(widget => {
+                    let mk = widget.dict.lookup(PDFLib.PDFName.of('MK'));
+                    if (!mk || typeof mk.set !== 'function') {
+                        mk = pdfDoc.context.obj({});
+                        widget.dict.set(PDFLib.PDFName.of('MK'), mk);
+                    }
+                    const whiteArray = pdfDoc.context.obj([1, 1, 1]);
+                    mk.set(PDFLib.PDFName.of('BG'), whiteArray);
+                    mk.delete(PDFLib.PDFName.of('BC'));
+                });
+            } catch (e) { }
+        });
+
+        form.updateFieldAppearances(font);
+        return await pdfDoc.save();
+    }
+
+    // Multi-page or Flatten (Normal PDF)
+    const outputPdf = await PDFLib.PDFDocument.create();
+    const allFieldRefs = [];
 
     for (let pIndex = 0; pIndex < pages.length; pIndex++) {
         const pageEl = pages[pIndex];
+        const pageSuffix = pIndex === 0 ? "" : `_p${pIndex + 1}`;
 
         // Load a fresh instance of the template for this page
         const tempDoc = await PDFLib.PDFDocument.load(templatePdfBytes);
+        const font = await tempDoc.embedFont(PDFLib.StandardFonts.Helvetica);
         const form = tempDoc.getForm();
 
         // Extract values from this HTML page element
@@ -278,29 +351,64 @@ async function construirPDF(flatten = false) {
             } catch (e) { }
         });
 
-        // Remove background highlight colors from widget dictionaries
-        const fields = form.getFields();
-        fields.forEach(field => {
+        // Set explicit white background [1, 1, 1] on widgets to override default blue field highlight
+        const tempFields = form.getFields();
+        tempFields.forEach(field => {
             try {
-                const widgets = field.acroField.getWidgets();
-                widgets.forEach(widget => {
-                    widget.dict.delete(PDFLib.PDFName.of('BG'));
-                    const mk = widget.dict.lookup(PDFLib.PDFName.of('MK'));
-                    if (mk && typeof mk.delete === 'function') {
-                        mk.delete(PDFLib.PDFName.of('BG'));
-                        mk.delete(PDFLib.PDFName.of('BC'));
+                field.acroField.getWidgets().forEach(widget => {
+                    let mk = widget.dict.lookup(PDFLib.PDFName.of('MK'));
+                    if (!mk || typeof mk.set !== 'function') {
+                        mk = tempDoc.context.obj({});
+                        widget.dict.set(PDFLib.PDFName.of('MK'), mk);
                     }
+                    const whiteArray = tempDoc.context.obj([1, 1, 1]);
+                    mk.set(PDFLib.PDFName.of('BG'), whiteArray);
+                    mk.delete(PDFLib.PDFName.of('BC'));
                 });
             } catch (e) { }
         });
 
+        form.updateFieldAppearances(font);
+
         if (flatten) {
             form.flatten();
+        } else if (pIndex > 0) {
+            // For multi-page editable PDF: rename fields on page 2, 3... to make them unique & independent
+            form.getFields().forEach(field => {
+                try {
+                    const dict = field.acroField.dict;
+                    const currentName = field.getName();
+                    dict.set(PDFLib.PDFName.of('T'), PDFLib.PDFString.of(currentName + pageSuffix));
+                } catch (e) { }
+            });
         }
 
         // Copy the populated page into the output document
         const [copiedPage] = await outputPdf.copyPages(tempDoc, [0]);
         outputPdf.addPage(copiedPage);
+
+        // Collect field references if generating an editable multi-page document
+        if (!flatten) {
+            const pageAnnotsRef = copiedPage.node.get(PDFLib.PDFName.of('Annots'));
+            if (pageAnnotsRef) {
+                const pageAnnots = outputPdf.context.lookup(pageAnnotsRef);
+                if (pageAnnots instanceof PDFLib.PDFArray) {
+                    for (let i = 0; i < pageAnnots.size(); i++) {
+                        allFieldRefs.push(pageAnnots.get(i));
+                    }
+                }
+            }
+        }
+    }
+
+    // Attach AcroForm catalog to outputPdf if generating an editable document
+    if (!flatten && allFieldRefs.length > 0) {
+        const acroFormDict = outputPdf.context.obj({
+            Fields: allFieldRefs,
+            NeedAppearances: false
+        });
+        const acroFormRef = outputPdf.context.register(acroFormDict);
+        outputPdf.catalog.set(PDFLib.PDFName.of('AcroForm'), acroFormRef);
     }
 
     return await outputPdf.save();
