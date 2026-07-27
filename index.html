@@ -28,6 +28,23 @@
             FORMATO DE ASISTENCIAS GALAPA (17 PERSONAS)
         </div>
         <div class="toolbar-group">
+            <button class="btn" id="btnEditar" onclick="toggleModoEdicion()"
+                title="Activar/desactivar modo para mover personas arrastrando">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <span id="btnEditarTexto">Editar</span>
+            </button>
+            <button class="btn" onclick="ordenarPorNombre()"
+                title="Ordenar todas las personas alfabéticamente por nombre (A-Z)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18" />
+                    <path d="M7 12h10" />
+                    <path d="M10 18h4" />
+                </svg>
+                Ordenar A-Z
+            </button>
             <button class="btn" onclick="window.print()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 6 2 18 2 18 9" />
@@ -70,8 +87,42 @@
                 </svg>
                 Limpiar Todo
             </button>
+            <!-- THREE-DOT MENU -->
+            <div class="menu-dots-wrapper">
+                <button class="btn btn-dots" id="btnMenuDots" onclick="toggleMenuDots()" title="Más opciones">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="12" cy="19" r="2" />
+                    </svg>
+                </button>
+                <div class="menu-dots-dropdown" id="menuDotsDropdown">
+                    <button class="menu-dots-item" onclick="guardarDatosJSON(); cerrarMenuDots()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Guardar Datos (JSON)
+                    </button>
+                    <button class="menu-dots-item"
+                        onclick="document.getElementById('jsonFileInput').click(); cerrarMenuDots()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Cargar Datos (JSON)
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Hidden file input for JSON loading -->
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="cargarDatosJSON(event)">
 
     <!-- DOCUMENT SHEET CONTAINER -->
     <div class="page-wrapper" id="pageWrapper">

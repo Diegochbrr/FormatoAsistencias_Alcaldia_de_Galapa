@@ -87,6 +87,9 @@ function crearElementoPagina(pageNum = 1) {
     const tbody = div.querySelector(".tabla-body");
     for (let i = 1; i <= 17; i++) {
         const tr = document.createElement("tr");
+        if (typeof modoEdicion !== "undefined" && modoEdicion) {
+            tr.setAttribute("draggable", "true");
+        }
         tr.innerHTML = `
             <td class="col-no"></td>
             <td class="col-id"><input type="text" class="cell-input center bold"></td>
@@ -133,6 +136,9 @@ function agregarPagina() {
 
     container.appendChild(newPage);
     actualizarNumeracionGeneral();
+    if (typeof modoEdicion !== "undefined" && modoEdicion) {
+        actualizarDraggableRows(true);
+    }
 }
 
 // Check if a specific page sheet contains any filled table data or inputs
@@ -218,7 +224,7 @@ function limpiarTabla() {
 
 // Core helper function to populate multi-page PDF document using pdf-lib
 async function construirPDF(flatten = false) {
-    const response = await fetch('Formato_Galapa_Editable.pdf');
+    const response = await fetch('Formato_Galapa_Editable.pdf?v=' + Date.now());
     if (!response.ok) {
         throw new Error(`No se pudo cargar la plantilla PDF. Estado: ${response.status}`);
     }
@@ -260,6 +266,7 @@ async function construirPDF(flatten = false) {
             const telVal = inputs[2]?.value || "";
             const firmaVal = inputs[3]?.value || "";
 
+            try { form.getTextField(`no_${i}`).setText(String(i)); } catch (e) { }
             try { form.getTextField(`id_${i}`).setText(idVal); } catch (e) { }
             try { form.getTextField(`nombre_${i}`).setText(nombreVal); } catch (e) { }
             try { form.getTextField(`tel_${i}`).setText(telVal); } catch (e) { }
@@ -307,6 +314,7 @@ async function construirPDF(flatten = false) {
         // Load a fresh instance of the template for this page
         const tempDoc = await PDFLib.PDFDocument.load(templatePdfBytes);
         const font = await tempDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const fontBold = await tempDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         const form = tempDoc.getForm();
 
         // Extract values from this HTML page element
@@ -328,6 +336,7 @@ async function construirPDF(flatten = false) {
             const i = rIndex + 1;
             if (i > 17) return;
 
+            const globalNum = pIndex * 17 + i;
             const inputs = row.querySelectorAll("input[type='text']");
             const check = row.querySelector("input[type='checkbox']");
 
@@ -335,6 +344,45 @@ async function construirPDF(flatten = false) {
             const nombreVal = inputs[1]?.value || "";
             const telVal = inputs[2]?.value || "";
             const firmaVal = inputs[3]?.value || "";
+
+            let noSet = false;
+            try {
+                const noField = form.getTextField(`no_${i}`);
+                noField.setText(String(globalNum));
+                noSet = true;
+            } catch (e) { }
+
+            // Fallback for PDF template files without no_i AcroForm fields
+            if (!noSet && pIndex > 0) {
+                try {
+                    const idField = form.getTextField(`id_${i}`);
+                    const widget = idField.acroField.getWidgets()[0];
+                    const rect = widget.getRectangle();
+                    const numStr = String(globalNum);
+                    const fontSize = 8;
+                    const textWidth = fontBold.widthOfTextAtSize(numStr, fontSize);
+                    const pdfPage = tempDoc.getPage(0);
+
+                    // Cover static 1..17 number within x=32 to x=63 without touching vertical grid line at x=65
+                    pdfPage.drawRectangle({
+                        x: 32,
+                        y: rect.y + 1,
+                        width: 31,
+                        height: rect.height - 2,
+                        color: PDFLib.rgb(1, 1, 1),
+                        borderWidth: 0,
+                    });
+
+                    // Draw the new sequential number centered at x=47.5
+                    pdfPage.drawText(numStr, {
+                        x: 47.5 - (textWidth / 2),
+                        y: rect.y + (rect.height - fontSize) / 2 + 1,
+                        size: fontSize,
+                        font: fontBold,
+                        color: PDFLib.rgb(0, 0, 0),
+                    });
+                } catch (e) { }
+            }
 
             try { form.getTextField(`id_${i}`).setText(idVal); } catch (e) { }
             try { form.getTextField(`nombre_${i}`).setText(nombreVal); } catch (e) { }
@@ -419,9 +467,28 @@ async function generarPDFNormal() {
     try {
         const pdfBytes = await construirPDF(true);
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const fileName = 'Formato_Galapa_Asistencia_Normal.pdf';
+
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{ description: "Archivo PDF", accept: { "application/pdf": [".pdf"] } }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                mostrarNotificacion("PDF Normal guardado como " + handle.name);
+                return;
+            } catch (err) {
+                if (err.name === "AbortError") return;
+                console.warn("showSaveFilePicker falló, usando método alternativo:", err);
+            }
+        }
+
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'Formato_Galapa_Asistencia_Normal.pdf';
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -437,9 +504,28 @@ async function generarPDFEditable() {
     try {
         const pdfBytes = await construirPDF(false);
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const fileName = 'Formato_Galapa_Asistencia_Editable.pdf';
+
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{ description: "Archivo PDF Editable", accept: { "application/pdf": [".pdf"] } }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                mostrarNotificacion("PDF Editable guardado como " + handle.name);
+                return;
+            } catch (err) {
+                if (err.name === "AbortError") return;
+                console.warn("showSaveFilePicker falló, usando método alternativo:", err);
+            }
+        }
+
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'Formato_Galapa_Asistencia_Editable.pdf';
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -479,4 +565,402 @@ window.addEventListener("beforeunload", (event) => {
 // Initialize on DOM load
 window.addEventListener("DOMContentLoaded", () => {
     limpiarTabla();
+    inicializarDragAndDrop();
 });
+
+/* ==========================================
+   MODO EDICIÓN (REORDENAR POR ARRASTRE) & ORDENAR ALFABÉTICAMENTE
+   ========================================== */
+let modoEdicion = false;
+let draggedRow = null;
+let dropPosition = 'after';
+
+// Toast Notification Helper
+function mostrarNotificacion(mensaje) {
+    let toast = document.getElementById("toast-notification");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "toast-notification";
+        toast.className = "toast-notification no-print";
+        document.body.appendChild(toast);
+    }
+    toast.textContent = mensaje;
+    toast.classList.add("show");
+
+    if (toast.timeoutId) clearTimeout(toast.timeoutId);
+    toast.timeoutId = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2500);
+}
+
+// Toggle Drag & Drop Edit Mode
+function toggleModoEdicion() {
+    modoEdicion = !modoEdicion;
+    const btn = document.getElementById("btnEditar");
+    const btnTexto = document.getElementById("btnEditarTexto");
+    const container = document.getElementById("pagesContainer");
+
+    if (modoEdicion) {
+        if (btn) btn.classList.add("btn-active");
+        if (btnTexto) btnTexto.textContent = "Finalizar Edición";
+        if (container) container.classList.add("modo-edicion-activo");
+        actualizarDraggableRows(true);
+        mostrarNotificacion("Modo Edición activo: arrastre las personas para cambiar de lugar");
+    } else {
+        if (btn) btn.classList.remove("btn-active");
+        if (btnTexto) btnTexto.textContent = "Editar";
+        if (container) container.classList.remove("modo-edicion-activo");
+        actualizarDraggableRows(false);
+        limpiarEstilosDrag();
+        mostrarNotificacion("Modo Edición finalizado");
+    }
+}
+
+// Enable/Disable draggable attribute on all table rows
+function actualizarDraggableRows(state) {
+    const rows = document.querySelectorAll(".tabla-body tr");
+    rows.forEach(tr => {
+        if (state) {
+            tr.setAttribute("draggable", "true");
+        } else {
+            tr.removeAttribute("draggable");
+        }
+    });
+}
+
+// Clean drag over visual highlight indicators
+function limpiarEstilosDrag() {
+    document.querySelectorAll(".tabla-body tr").forEach(r => {
+        r.classList.remove("dragging", "drag-over-top", "drag-over-bottom");
+    });
+}
+
+// Rebalance rows across pages so each page always maintains exactly 17 rows
+function rebalancearFilasEnPaginas() {
+    const container = document.getElementById("pagesContainer");
+    if (!container) return;
+
+    const pages = container.querySelectorAll(".page");
+    const allRows = Array.from(container.querySelectorAll(".tabla-body tr"));
+
+    pages.forEach((page, pageIndex) => {
+        const tbody = page.querySelector(".tabla-body");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        const pageRows = allRows.slice(pageIndex * 17, (pageIndex + 1) * 17);
+        pageRows.forEach(tr => tbody.appendChild(tr));
+    });
+
+    actualizarNumeracionGeneral();
+    if (modoEdicion) actualizarDraggableRows(true);
+}
+
+// Sort all rows alphabetically by person's name (A-Z) across all pages
+function ordenarPorNombre() {
+    const container = document.getElementById("pagesContainer");
+    if (!container) return;
+
+    const allRows = Array.from(container.querySelectorAll(".tabla-body tr"));
+    if (allRows.length === 0) return;
+
+    const hasData = allRows.some(tr => {
+        const input = tr.querySelector(".col-name input");
+        return input && input.value.trim() !== "";
+    });
+
+    if (!hasData) {
+        mostrarNotificacion("No hay nombres ingresados para ordenar");
+        return;
+    }
+
+    const filledRows = [];
+    const emptyRows = [];
+
+    allRows.forEach(tr => {
+        const input = tr.querySelector(".col-name input");
+        const nameVal = input ? input.value.trim() : "";
+        if (nameVal !== "") {
+            filledRows.push(tr);
+        } else {
+            emptyRows.push(tr);
+        }
+    });
+
+    // Sort filled rows by Spanish locale
+    filledRows.sort((a, b) => {
+        const nameA = a.querySelector(".col-name input")?.value.trim() || "";
+        const nameB = b.querySelector(".col-name input")?.value.trim() || "";
+        return nameA.localeCompare(nameB, 'es', { sensitivity: 'base', numeric: true });
+    });
+
+    const sortedAllRows = [...filledRows, ...emptyRows];
+
+    const pages = container.querySelectorAll(".page");
+    pages.forEach((page, pageIndex) => {
+        const tbody = page.querySelector(".tabla-body");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        const pageRows = sortedAllRows.slice(pageIndex * 17, (pageIndex + 1) * 17);
+        pageRows.forEach(tr => tbody.appendChild(tr));
+    });
+
+    actualizarNumeracionGeneral();
+    if (modoEdicion) actualizarDraggableRows(true);
+    mostrarNotificacion("Todas las tablas fueron ordenadas por nombre (A-Z)");
+}
+
+// Setup Event Delegation for Drag & Drop on pagesContainer
+function inicializarDragAndDrop() {
+    const container = document.getElementById("pagesContainer");
+    if (!container) return;
+
+    container.addEventListener("dragstart", (e) => {
+        if (!modoEdicion) return;
+        const tr = e.target.closest(".tabla-body tr");
+        if (!tr) return;
+
+        draggedRow = tr;
+        tr.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", "");
+    });
+
+    container.addEventListener("dragover", (e) => {
+        if (!modoEdicion || !draggedRow) return;
+        const tr = e.target.closest(".tabla-body tr");
+        if (!tr || tr === draggedRow) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+
+        const rect = tr.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+
+        limpiarEstilosDrag();
+        draggedRow.classList.add("dragging");
+
+        if (e.clientY < midY) {
+            tr.classList.add("drag-over-top");
+            dropPosition = "before";
+        } else {
+            tr.classList.add("drag-over-bottom");
+            dropPosition = "after";
+        }
+    });
+
+    container.addEventListener("dragleave", (e) => {
+        const tr = e.target.closest(".tabla-body tr");
+        if (tr && tr !== draggedRow) {
+            tr.classList.remove("drag-over-top", "drag-over-bottom");
+        }
+    });
+
+    container.addEventListener("drop", (e) => {
+        if (!modoEdicion || !draggedRow) return;
+        const targetTr = e.target.closest(".tabla-body tr");
+        if (!targetTr || targetTr === draggedRow) return;
+
+        e.preventDefault();
+
+        if (dropPosition === "before") {
+            targetTr.parentNode.insertBefore(draggedRow, targetTr);
+        } else {
+            targetTr.parentNode.insertBefore(draggedRow, targetTr.nextSibling);
+        }
+
+        rebalancearFilasEnPaginas();
+    });
+
+    container.addEventListener("dragend", (e) => {
+        limpiarEstilosDrag();
+        draggedRow = null;
+    });
+}
+
+/* ==========================================
+   THREE-DOT MENU TOGGLE
+   ========================================== */
+function toggleMenuDots() {
+    const dropdown = document.getElementById("menuDotsDropdown");
+    if (dropdown) dropdown.classList.toggle("open");
+}
+
+function cerrarMenuDots() {
+    const dropdown = document.getElementById("menuDotsDropdown");
+    if (dropdown) dropdown.classList.remove("open");
+}
+
+// Close menu when clicking outside
+document.addEventListener("click", (e) => {
+    const wrapper = document.querySelector(".menu-dots-wrapper");
+    if (wrapper && !wrapper.contains(e.target)) {
+        cerrarMenuDots();
+    }
+});
+
+/* ==========================================
+   GUARDAR / CARGAR DATOS JSON
+   ========================================== */
+
+// Save all page data to a downloadable JSON file
+async function guardarDatosJSON() {
+    const container = document.getElementById("pagesContainer");
+    if (!container) return;
+
+    const pages = container.querySelectorAll(".page");
+    const data = {
+        version: 1,
+        fechaGuardado: new Date().toISOString(),
+        paginas: []
+    };
+
+    pages.forEach((page) => {
+        const pageData = {
+            lugar: page.querySelector(".lugar-input")?.value || "",
+            dia: page.querySelector(".fecha-dia")?.value || "",
+            mes: page.querySelector(".fecha-mes")?.value || "",
+            ano: page.querySelector(".fecha-ano")?.value || "",
+            actividades: page.querySelector(".actividades-input")?.value || "",
+            filas: []
+        };
+
+        const rows = page.querySelectorAll(".tabla-body tr");
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll("input[type='text']");
+            const check = row.querySelector("input[type='checkbox']");
+            pageData.filas.push({
+                id: inputs[0]?.value || "",
+                nombre: inputs[1]?.value || "",
+                telefono: inputs[2]?.value || "",
+                firma: inputs[3]?.value || "",
+                asistencia: check ? check.checked : false
+            });
+        });
+
+        data.paginas.push(pageData);
+    });
+
+    // Generate filename based on lugar & fecha
+    const p1 = data.paginas[0];
+    let fileName = "Asistencia_Galapa";
+    if (p1 && p1.lugar) {
+        fileName += "_" + p1.lugar.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, "").trim().replace(/\s+/g, "_");
+    }
+    if (p1 && p1.dia && p1.mes && p1.ano) {
+        fileName += `_${p1.dia}-${p1.mes}-${p1.ano}`;
+    }
+    fileName += ".json";
+
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+
+    // Try native "Save As" dialog (showSaveFilePicker API)
+    if (window.showSaveFilePicker) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{
+                    description: "Archivo JSON de Asistencia",
+                    accept: { "application/json": [".json"] }
+                }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            mostrarNotificacion("Datos guardados como " + handle.name);
+            return;
+        } catch (err) {
+            // User cancelled the dialog — do nothing
+            if (err.name === "AbortError") return;
+            console.warn("showSaveFilePicker falló, usando método alternativo:", err);
+        }
+    }
+
+    // Fallback: classic anchor download (goes to Downloads folder)
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    mostrarNotificacion("Datos guardados como " + fileName);
+}
+
+// Load data from a JSON file and populate all pages
+function cargarDatosJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            if (!data.paginas || !Array.isArray(data.paginas) || data.paginas.length === 0) {
+                alert("El archivo JSON no tiene un formato válido de asistencias.");
+                return;
+            }
+
+            // Check if current document has data and confirm overwrite
+            if (hayDatosIngresados()) {
+                const confirmar = confirm("Ya hay datos en el documento actual. ¿Desea reemplazarlos con los datos del archivo?");
+                if (!confirmar) return;
+            }
+
+            const container = document.getElementById("pagesContainer");
+            if (!container) return;
+
+            // Clear everything and rebuild pages
+            container.innerHTML = "";
+
+            data.paginas.forEach((pageData, pageIndex) => {
+                const newPage = crearElementoPagina(pageIndex + 1);
+
+                // Fill metadata
+                const lugarInput = newPage.querySelector(".lugar-input");
+                const diaInput = newPage.querySelector(".fecha-dia");
+                const mesInput = newPage.querySelector(".fecha-mes");
+                const anoInput = newPage.querySelector(".fecha-ano");
+                const actInput = newPage.querySelector(".actividades-input");
+
+                if (lugarInput) lugarInput.value = pageData.lugar || "";
+                if (diaInput) diaInput.value = pageData.dia || "";
+                if (mesInput) mesInput.value = pageData.mes || "";
+                if (anoInput) anoInput.value = pageData.ano || "";
+                if (actInput) actInput.value = pageData.actividades || "";
+
+                // Fill table rows
+                const rows = newPage.querySelectorAll(".tabla-body tr");
+                if (pageData.filas && Array.isArray(pageData.filas)) {
+                    pageData.filas.forEach((fila, rowIndex) => {
+                        if (rowIndex >= rows.length) return;
+                        const row = rows[rowIndex];
+                        const inputs = row.querySelectorAll("input[type='text']");
+                        const check = row.querySelector("input[type='checkbox']");
+
+                        if (inputs[0]) inputs[0].value = fila.id || "";
+                        if (inputs[1]) inputs[1].value = fila.nombre || "";
+                        if (inputs[2]) inputs[2].value = fila.telefono || "";
+                        if (inputs[3]) inputs[3].value = fila.firma || "";
+                        if (check) check.checked = fila.asistencia || false;
+                    });
+                }
+
+                container.appendChild(newPage);
+            });
+
+            actualizarNumeracionGeneral();
+            mostrarNotificacion("Datos cargados correctamente desde " + file.name);
+
+        } catch (err) {
+            console.error("Error al cargar JSON:", err);
+            alert("Error al leer el archivo: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+
+    // Reset the file input so the same file can be loaded again if needed
+    event.target.value = "";
+}
+

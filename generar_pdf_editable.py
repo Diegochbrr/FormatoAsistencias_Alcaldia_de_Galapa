@@ -94,10 +94,8 @@ def generar_pdf_editable():
         y_curr = table_top - 24 - (i * row_height)
         c.line(x_no, y_curr, x_end, y_curr)
         
-        # Row Number
-        c.drawCentredString((x_no + x_id)/2, y_curr + 6, str(i))
-        
         # Interactive Text Fields
+        c.acroForm.textfield(name=f"no_{i}", x=x_no + 1, y=y_curr + 2, width=(x_id - x_no) - 2, height=row_height - 4, borderWidth=0, textColor=colors.black, fontSize=8, fontName="Helvetica-Bold")
         c.acroForm.textfield(name=f"id_{i}", x=x_id + 2, y=y_curr + 2, width=(x_name - x_id) - 4, height=row_height - 4, borderWidth=0, textColor=colors.black, fontSize=8)
         c.acroForm.textfield(name=f"nombre_{i}", x=x_name + 2, y=y_curr + 2, width=(x_tel - x_name) - 4, height=row_height - 4, borderWidth=0, textColor=colors.black, fontSize=8)
         c.acroForm.textfield(name=f"tel_{i}", x=x_tel + 2, y=y_curr + 2, width=(x_firma - x_tel) - 4, height=row_height - 4, borderWidth=0, textColor=colors.black, fontSize=8)

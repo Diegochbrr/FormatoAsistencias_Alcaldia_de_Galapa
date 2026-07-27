@@ -1,0 +1,34 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Python & Environment Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# Temporary / Scratch Files
+scratch/
+*.tmp
+*.log
+
+# Markdown Documentation Files
+*.md
+.agents/
+
+# Exported User Data Backups
+Asistencia_Galapa_*.json
