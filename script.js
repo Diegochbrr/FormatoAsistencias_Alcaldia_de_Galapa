@@ -262,7 +262,7 @@ async function construirPDF(flatten = false) {
             const check = row.querySelector("input[type='checkbox']");
 
             const idVal = inputs[0]?.value || "";
-            const nombreVal = inputs[1]?.value || "";
+            const nombreVal = (inputs[1]?.value || "").toUpperCase();
             const telVal = inputs[2]?.value || "";
             const firmaVal = inputs[3]?.value || "";
 
@@ -341,7 +341,7 @@ async function construirPDF(flatten = false) {
             const check = row.querySelector("input[type='checkbox']");
 
             const idVal = inputs[0]?.value || "";
-            const nombreVal = inputs[1]?.value || "";
+            const nombreVal = (inputs[1]?.value || "").toUpperCase();
             const telVal = inputs[2]?.value || "";
             const firmaVal = inputs[3]?.value || "";
 
@@ -566,6 +566,15 @@ window.addEventListener("beforeunload", (event) => {
 window.addEventListener("DOMContentLoaded", () => {
     limpiarTabla();
     inicializarDragAndDrop();
+
+    const container = document.getElementById("pagesContainer");
+    if (container) {
+        container.addEventListener("change", (e) => {
+            if (e.target && e.target.classList.contains("uppercase")) {
+                e.target.value = e.target.value.toUpperCase();
+            }
+        });
+    }
 });
 
 /* ==========================================
